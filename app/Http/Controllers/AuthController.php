@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -40,20 +41,24 @@ class AuthController extends Controller
 
 
     // تسجيل الدخول
- public function login(Request $request)
+public function login(Request $request)
 {
     $request->validate([
         'email'    => 'required|email',
         'password' => 'required|min:6',
     ]);
 
-    if (!Auth::attempt($request->only('email', 'password'))) {
+    // البحث عن المستخدم
+    $user = User::where('email', $request->email)->first();
+
+    // التحقق من كلمة المرور
+    if (!$user || !Hash::check($request->password, $user->password)) {
         return response()->json([
             'message' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
         ], 401);
     }
 
-    $user = Auth::user();
+    // إنشاء التوكن
     $token = $user->createToken('sakani_token')->plainTextToken;
 
     return response()->json([
